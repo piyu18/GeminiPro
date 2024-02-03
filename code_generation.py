@@ -13,7 +13,7 @@ load_dotenv()
 
 llm = genai(model="gemini-pro")
 code_prompt = PromptTemplate(
-    template="Write a {language} function that will {task}",
+    template="Write a small {language} function that will {task}",
     input_variables=['language','task']
 )
 
@@ -23,9 +23,14 @@ tset_code_prompt = PromptTemplate(
     
 )
 
+api_prompt = PromptTemplate(
+    input_variables=['language','code'],
+    template="Write an API for the {language} function:\n{code}"
+)
+
 documentaion_prompt = PromptTemplate(
     input_variables=['language','code'],
-    template="Write a documentaion for the {language} function:\n{code}"
+    template="Write an API documentaion for the {language} function:\n{code}"
 )
 
 code_chain = LLMChain(
@@ -40,15 +45,21 @@ tset_code_chain = LLMChain(
     output_key='test_code'
 )
 
+api_chain = LLMChain(
+    llm=llm,
+    prompt=api_prompt,
+    output_key='api'
+)
+
 documentaion_chain = LLMChain(
     llm=llm,
     prompt=documentaion_prompt,
     output_key='documentation'
 )
 chain = SequentialChain(
-    chains=[code_chain, tset_code_chain, documentaion_chain],
+    chains=[code_chain, tset_code_chain,api_chain, documentaion_chain],
     input_variables=['language', 'task'],
-    output_variables=['code','test_code','documentation']
+    output_variables=['code','test_code','api','documentation']
 )
 result = chain(
     {
@@ -63,5 +74,7 @@ print('------------GENERATED CODE--------------')
 print(result['code'])
 print('---------------GENERATED TEST-------------')
 print(result['test_code'])
+print('---------------API-------------')
+print(result['api'])
 print('--------------DOCUMENTATION------------')
 print(result['documentation'])
